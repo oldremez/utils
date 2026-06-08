@@ -156,7 +156,12 @@ set_sshd "MaxAuthTries"                    "3"
 
 # Validate config before reloading — avoids locking yourself out
 sshd -t || die "sshd config validation failed — check $SSHD_CONF and its .bak"
-systemctl reload sshd
+
+# Ubuntu names the service 'ssh'; RHEL/Arch use 'sshd'
+SSH_SVC=$(systemctl list-unit-files 'ssh*.service' --no-legend 2>/dev/null \
+    | awk '{print $1}' | grep -E '^sshd?\.service$' | head -1)
+SSH_SVC="${SSH_SVC%.service}"   # strip .service suffix for systemctl
+systemctl reload "${SSH_SVC:-ssh}"
 ok "SSH hardened (root login & password auth disabled)"
 
 # ── 8. FIREWALL (UFW) ────────────────────────────────────────────────────────
